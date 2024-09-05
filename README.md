@@ -21,7 +21,7 @@ git clone https://github.com/chrisna2/SCDF-locally-docker.git
 ```
 
 2. 인텔리J 사용시 Terminal 오픈, PowerShell이 아닌 리눅스 계열 터미널 사용. GIT을 설치한 경우 git Bash 활용 권장
-   (이유는 makefile이 리눅스 기반의 명령어로 구성됨) :
+   (이유는 makefile이 리눅스 기반의 명령어로 구성됨) 
 
 
 3. 프로젝트 디렉터리 경로 변경
