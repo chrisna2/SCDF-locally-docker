@@ -14,7 +14,7 @@
 
 ## 빠른 설치 진행
 
-1. Clone the repository (Alternatively, you can download the files directly from GitHub):
+1. 해당 주소의 Git repository에서 clone 진행:
 
 ```bash
 git clone https://github.com/chrisna2/SCDF-locally-docker.git
@@ -72,9 +72,10 @@ make dataflow-down
   - 사용자 인터페이스 제공
   - REST API를 통한 애플리케이션 관리 및 배포
   - 데이터 파이프라인 구성 및 관리
+  - ##### 배치 서비스에 진행 상황 모니터링 및 작업 제어 (본 연구과제의 목적)
 
 2. Skipper Server (skipper-server) :
-   Skipper Server는 실제 애플리케이션 배포와 관리를 담당합니다. Data Flow Server에서 정의된 파이프라인을 실제 클러스터에 배포하고, 애플리케이션 버전 관리 및 배포 작업을 처리.
+   Skipper Server는 실제 애플리케이션 배포와 관리를 담당. Data Flow Server에서 정의된 파이프라인을 실제 클러스터에 배포하고, 애플리케이션 버전 관리 및 배포 작업을 처리.
 
    - 배포 관리: Skipper Server는 주로 애플리케이션의 배포를 담당. Data Flow Server에서 정의된 파이프라인을 실제로 실행하기 위해 Skipper Server가 필요.
    - 버전 관리: Skipper는 애플리케이션 버전 관리를 통해, 다양한 버전의 애플리케이션을 관리하고 배포 가능.
