@@ -1,0 +1,82 @@
+version: '3'
+
+# 환경변수 설정 :
+# - DATAFLOW_VERSION 및 SKIPPER_VERSION :
+#     > 이 변수들은 DataFlow와 Skipper 이미지의 버전을 지정하는 데 사용됩니다. 예를 들어, 특정 버전의 Spring Cloud Data Flow 및 Skipper를 사용하고자 할 때 이 변수들을 설정합니다.
+#
+# - STREAM_APPS_URI 및 TASK_APPS_URI :
+#     > 이 변수들은 미리 등록할 Stream 및 Task 애플리케이션의 URI를 지정하는 데 사용됩니다. 이를 통해 데이터 플로우와 작업에서 사용할 애플리케이션들을 미리 설정할 수 있습니다.
+#
+# - DATAFLOW_HOST_MOUNT_PATH 및 DATAFLOW_DOCKER_MOUNT_PATH :
+#     > 호스트와 Docker 컨테이너 간의 마운트 폴더를 설정합니다.
+#     > DATAFLOW_HOST_MOUNT_PATH는 호스트 머신에서의 경로를, DATAFLOW_DOCKER_MOUNT_PATH는 Docker 컨테이너 내에서의 경로를 의미합니다.
+#     > 예를 들어, 로컬 Maven 저장소를 마운트하려면 DATAFLOW_HOST_MOUNT_PATH=~/.m2와 DATAFLOW_DOCKER_MOUNT_PATH=/home/cnb/.m2처럼 설정합니다.
+#     > 지정하지 않으면 기본적으로 DATAFLOW_HOST_MOUNT_PATH는 Docker Compose가 시작된 로컬 폴더로 설정되고, DATAFLOW_DOCKER_MOUNT_PATH는 /home/cnb/scdf로 설정됩니다.
+#
+# - APPS_PORT_RANGE :
+#     > Skipper 서버에서 사용하는 포트 범위를 재정의하는 데 사용됩니다. 기본적으로 Skipper 서버에서 실행되는 스트림 애플리케이션의 포트 범위를 지정하며,
+#       이 범위는 로컬 배포자의 PORTRANGE_LOW 및 PORTRANGE_HIGH를 초과해야 합니다.
+#     > 스트림 애플리케이션이 별도의 Docker 컨테이너에서 실행된다면, 이 컨테이너의 포트 범위 (DOCKER_PORTRANGE_LOW, DOCKER_PORTRANGE_HIGH)가
+#       APPS_PORT_RANGE와 겹치지 않도록 설정해야 합니다.
+#
+# - 노출된 컨테이너 포트 :
+#   > 9393:9393 :
+#     Spring Cloud Data Flow 서버 포트입니다. 로컬에서 http://localhost:9393/dashboard로 접속할 수 있습니다.
+#   > 7577:7577 :
+#     Skipper 서버 포트입니다. 로컬에서 http://localhost:7577/api로 접속할 수 있습니다.
+#   > 20000-20105:20000-20105 :
+#     Skipper 컨테이너 내에서 실행되는 스트림 애플리케이션이 사용하는 포트 범위입니다. 이 범위 내의 포트를 통해 애플리케이션의 액추에이터 엔드포인트에 접근할 수 있습니다.
+#     별도의 Docker 컨테이너에서 실행되는 스트림 애플리케이션은 해당 컨테이너에서 노출된 포트를 통해 접근할 수 있습니다.
+services:
+
+  kafka-broker:
+    # NOTE: Please use the latest version here!
+    image: docker.redpanda.com/vectorized/redpanda:latest
+    container_name: kafka-broker
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    command:
+      - redpanda
+      - start
+      - --smp
+      - '1'
+      - --reserve-memory
+      - 0M
+      - --overprovisioned
+      - --node-id
+      - '0'
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr
+      - PLAINTEXT://kafka-broker:29092,OUTSIDE://localhost:9092
+    restart: unless-stopped
+
+  kafka-console:
+    image: docker.redpanda.com/vectorized/console:latest
+    container_name: kafka-console
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_BROKERS=kafka-broker:29092
+    depends_on:
+      - kafka-broker
+    restart: always
+
+  dataflow-server:
+    environment:
+      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_STREAM_SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS=PLAINTEXT://kafka-broker:29092
+      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_STREAM_SPRING_CLOUD_STREAM_KAFKA_STREAMS_BINDER_BROKERS=PLAINTEXT://kafka-broker:29092
+      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_STREAM_SPRING_KAFKA_STREAMS_PROPERTIES_METRICS_RECORDING_LEVEL=DEBUG
+    depends_on:
+      - kafka-broker
+
+  app-import-stream:
+    command: >
+      /bin/sh -c "
+        ./wait-for-it.sh -t 360 dataflow-server:9393;
+        wget -qO- '${DATAFLOW_URI:-http://dataflow-server:9393}/apps' --no-check-certificate --post-data='uri=${STREAM_APPS_URI:-https://dataflow.spring.io/kafka-maven-latest&force=true}';
+        wget -qO- '${DATAFLOW_URI:-http://dataflow-server:9393}/apps/sink/ver-log/3.0.1' --no-check-certificate --post-data='uri=maven://org.springframework.cloud.stream.app:log-sink-kafka:3.0.1';
+        wget -qO- '${DATAFLOW_URI:-http://dataflow-server:9393}/apps/sink/ver-log/2.1.5.RELEASE' --no-check-certificate --post-data='uri=maven://org.springframework.cloud.stream.app:log-sink-kafka:2.1.5.RELEASE';
+        wget -qO- '${DATAFLOW_URI:-http://dataflow-server:9393}/apps/sink/dataflow-tasklauncher/${DATAFLOW_VERSION:-2.10.2-SNAPSHOT}' --no-check-certificate --post-data='uri=maven://org.springframework.cloud:spring-cloud-dataflow-tasklauncher-sink-kafka:${DATAFLOW_VERSION:-2.10.2-SNAPSHOT}';
+        echo 'Maven Stream apps imported'"
