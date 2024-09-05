@@ -37,7 +37,7 @@ make dataflow
 
 5. 서비스가 시작될 때까지 기다린 후, SCDF 대시보드에 접속 http://localhost:9393/dashboard.
 
-6. To stop the Data Flow environment services:
+6. 데이터 플로우 환경 서비스 종료, 아래 명령어 실행 :
 
 ```bash
 make dataflow-down
@@ -79,7 +79,6 @@ make dataflow-down
    - 배포 관리: Skipper Server는 주로 애플리케이션의 배포를 담당. Data Flow Server에서 정의된 파이프라인을 실제로 실행하기 위해 Skipper Server가 필요.
    - 버전 관리: Skipper는 애플리케이션 버전 관리를 통해, 다양한 버전의 애플리케이션을 관리하고 배포 가능.
    - 배포의 세부 관리: 애플리케이션을 클러스터에 배포하고, 배포 상태를 모니터링하며, 롤백과 같은 작업을 처리.
-
 
 - 주요 기능:
   - 애플리케이션의 배포와 관리
