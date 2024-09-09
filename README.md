@@ -7,7 +7,7 @@
 
 ## 사전 요구 사항
 
-- Docker (Docker Desktop) 설치
+- Docker (window, Docker Desktop) 설치
 - Docker Compose 설치
 - Git (optional, for cloning the repository)
 - GNU Make (http://gnuwin32.sourceforge.net/packages/make.htm) - 설치 후 환경 변수(path) 설정 필요
@@ -54,8 +54,8 @@ make dataflow-down
 
 * `dataflow-server`: Spring Cloud Data Flow 서버
 * `skipper-server`: Spring Cloud Skipper 서버
-* `app-import-stream`: 스트림 애플리케이션을 가져오기 위한 유틸리티 컨테이너
-* `app-import-task`: 태스크 애플리케이션을 가져오기 위한 유틸리티 컨테이너
+* `app-import-stream`: Stream 애플리케이션을 가져오기 위한 유틸리티 컨테이너
+* `app-import-task`: Task 애플리케이션을 가져오기 위한 유틸리티 컨테이너
 
 ## SCDF 서버의 구성
 
