@@ -10,7 +10,7 @@
 - Docker (window, Docker Desktop) 설치
 - Docker Compose 설치
 - Git (optional, for cloning the repository)
-- GNU Make (http://gnuwin32.sourceforge.net/packages/make.htm) - 설치 후 환경 변수(path) 설정 필요
+- (WIMDOWS) GNU Make (http://gnuwin32.sourceforge.net/packages/make.htm) - 설치 후 환경 변수(path) 설정 필요
 
 ## 빠른 설치 진행
 
@@ -86,4 +86,139 @@ make dataflow-down
   - 애플리케이션 버전 관리
   - 배포 작업의 세부 관리 및 롤백
 
+
+## SCDF 서버, Spring batch 연동
+
+
+1. Spring Batch Job 샘플 
+
+```java
+@Configuration
+@EnableBatchProcessing
+public class BatchConfiguration {
+
+    @Autowired
+    public JobBuilderFactory jobBuilderFactory;
+
+    @Autowired
+    public StepBuilderFactory stepBuilderFactory;
+
+    @Bean
+    public Job sampleJob() {
+        return jobBuilderFactory.get("sampleJob")
+                .incrementer(new RunIdIncrementer())
+                .flow(sampleStep())
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step sampleStep() {
+        return stepBuilderFactory.get("sampleStep")
+                .<String, String>chunk(10)
+                .reader(sampleReader())
+                .processor(sampleProcessor())
+                .writer(sampleWriter())
+                .build();
+    }
+
+    @Bean
+    public ItemReader<String> sampleReader() {
+        return new SampleReader();
+    }
+
+    @Bean
+    public ItemProcessor<String, String> sampleProcessor() {
+        return new SampleProcessor();
+    }
+
+    @Bean
+    public ItemWriter<String> sampleWriter() {
+        return new SampleWriter();
+    }
+}
+```
+
+
+2. Spring Cloud Task로 변환 Sample
+```java
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.task.configuration.EnableTask;
+
+@SpringBootApplication
+@EnableTask
+public class SpringBatchTaskApplication implements CommandLineRunner {
+
+    @Autowired
+    private JobLauncher jobLauncher;
+
+    @Autowired
+    private Job hpfDownloadJob;
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringBatchTaskApplication.class, args);
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        jobLauncher.run(hpfDownloadJob, new JobParameters());
+        System.out.println("Spring Cloud Task is running!");
+    }
+}
+```
+
+3. Docker 이미지 빌드
+
+
+```Dockerfile
+FROM openjdk:11-jre-slim
+VOLUME /tmp
+COPY target/your-app.jar app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+```bash
+docker build -t my-spring-batch-task .
+docker tag my-spring-batch-task username/my-spring-batch-task
+docker push username/my-spring-batch-task
+```
+
+※ 각 배치 작업을 관리하는 방법:
+이미 만들어둔 job이 10개면 그 10개에 대한 이미지나 jar파일을 구성해댜 되는 번거로움이 있음
+
+
+Docker 이미지 방식
+> 개별 Docker 이미지 생성: 각 배치 작업을 별도의 Docker 이미지로 빌드
+예를 들어, 각 배치 작업에 대해 개별 Dockerfile을 만들고 이미지를 생성.
+```bash
+##배치 작업 1: 
+docker build -t my-batch-job-1 .
+##배치 작업 2: 
+docker build -t my-batch-job-2 .
+##...
+##배치 작업 10: 
+docker build -t my-batch-job-10 .
+```
+
+JAR 파일 방식
+> 개별 JAR 파일 생성: 각 배치 작업을 별도의 JAR 파일로 빌드
+SCDF에 배포할 때, 각 JAR 파일을 참조하여 Task를 등록
+```bas
+##배치 작업 1: 
+mvn clean package로 batch-job-1.jar 생성
+##배치 작업 2: 
+mvn clean package로 batch-job-2.jar 생성
+##...
+##배치 작업 10: 
+mvn clean package로 batch-job-10.jar 생성
+````
+
+
+4. SCDF에 Task 등록 
+```bash
+dataflow:>task create my-task --definition "docker:username/my-spring-batch-task"
+dataflow:>task launch my-task
+```
 
