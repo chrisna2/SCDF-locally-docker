@@ -28,73 +28,32 @@ version: '3'
 #     Skipper 컨테이너 내에서 실행되는 스트림 애플리케이션이 사용하는 포트 범위입니다. 이 범위 내의 포트를 통해 애플리케이션의 액추에이터 엔드포인트에 접근할 수 있습니다.
 #     별도의 Docker 컨테이너에서 실행되는 스트림 애플리케이션은 해당 컨테이너에서 노출된 포트를 통해 접근할 수 있습니다.
 
-services:
+version: '3'
 
+services:
   dataflow-server:
-    image: springcloud/spring-cloud-dataflow-server:${DATAFLOW_VERSION:-2.10.2-SNAPSHOT}${BP_JVM_VERSION:-}
+    image: springcloud/spring-cloud-dataflow-server:${DATAFLOW_VERSION:-2.10.2-SNAPSHOT}
     container_name: dataflow-server
-    user: root
     ports:
       - "9393:9393"
     environment:
       - LANG=ko_KR.utf8
       - LC_ALL=ko_KR.utf8
       - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
-      - SPRINGDOC_APIDOCS_ENABLED=true
-      - SPRINGDOC_SWAGGERUI_ENABLED=true
-      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_STREAM_SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS=PLAINTEXT://kafka-broker:9092
-      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_STREAM_SPRING_CLOUD_STREAM_KAFKA_STREAMS_BINDER_BROKERS=PLAINTEXT://kafka-broker:9092
-      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_STREAM_SPRING_KAFKA_STREAMS_PROPERTIES_METRICS_RECORDING_LEVEL=DEBUG
-      # Set CLOSECONTEXTENABLED=true # CRT 런처를 제대로 종료하도록 설정하려는 경우, 이는 보통 특정 환경이나 애플리케이션에서 자원이나 컨텍스트를 올바르게 정리하기 위해 필요한 설정.
-      - SPRING_CLOUD_DATAFLOW_APPLICATIONPROPERTIES_TASK_SPRING_CLOUD_TASK_CLOSECONTEXTENABLED=true
-      - SPRING_CLOUD_SKIPPER_CLIENT_SERVER_URI=${SKIPPER_URI:-http://skipper-server:7577}/api
-      # (선택사항) Docker Hub 접근을 인증하여 애플리케이션 메타데이터에 접근할 수 있도록 설정.
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRY_CONFIGURATIONS_DEFAULT_USER=${METADATA_DEFAULT_DOCKERHUB_USER}
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRY_CONFIGURATIONS_DEFAULT_SECRET=${METADATA_DEFAULT_DOCKERHUB_PASSWORD}
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRYCONFIGURATIONS_DEFAULT_USER=${METADATA_DEFAULT_DOCKERHUB_USER}
-      - SPRING_CLOUD_DATAFLOW_CONTAINER_REGISTRYCONFIGURATIONS_DEFAULT_SECRET=${METADATA_DEFAULT_DOCKERHUB_PASSWORD}
-    depends_on:
-      - skipper-server
+      - SPRING_CLOUD_DATAFLOW_FEATURES_STREAMS_ENABLED=false  # 스트림 비활성화
     restart: always
     volumes:
       - ${DATAFLOW_HOST_MOUNT_PATH:-.}:${DATAFLOW_DOCKER_MOUNT_PATH:-/home/cnb/scdf}
-    platform: linux/amd64
 
-  skipper-server:
-    image: springcloud/spring-cloud-skipper-server:${SKIPPER_VERSION:-2.9.2-SNAPSHOT}${BP_JVM_VERSION:-}
-    container_name: skipper
-    user: root
-    ports:
-      - "7577:7577"
-      - ${APPS_PORT_RANGE:-20000-20195:20000-20195}
+  scdf-batch-app:
+    image: scdf-batch-app:latest
+    container_name: scdf-batch-app
+    build:
+      context: ./scdf-batch
+    depends_on:
+      - dataflow-server
     environment:
-      - LANG=en_US.utf8
-      - LC_ALL=en_US.utf8
-      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
-      - SPRING_CLOUD_SKIPPER_SERVER_PLATFORM_LOCAL_ACCOUNTS_DEFAULT_PORTRANGE_LOW=20000
-      - SPRING_CLOUD_SKIPPER_SERVER_PLATFORM_LOCAL_ACCOUNTS_DEFAULT_PORTRANGE_HIGH=20190
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_CLOUD_SKIPPER_SERVER_DEPLOYER=ERROR
-    volumes:
-      - ${DATAFLOW_HOST_MOUNT_PATH:-.}:${DATAFLOW_DOCKER_MOUNT_PATH:-/home/cnb/scdf}
-    platform: linux/amd64
+      - JAVA_OPTS="-Xmx512m -Xms256m"
     restart: always
 
-  app-import-stream:
-    image: springcloud/baseimage:${BASEIMAGE_VERSION:-1.0.1}
-    container_name: dataflow-app-import-stream
-    depends_on:
-      - dataflow-server
-    platform: linux/amd64
-
-  app-import-task:
-    image: springcloud/baseimage:${BASEIMAGE_VERSION:-1.0.1}
-    container_name: dataflow-app-import-task
-    depends_on:
-      - dataflow-server
-    command: >
-      /bin/sh -c "
-        ./wait-for-it.sh -t 360 dataflow-server:9393;
-        wget -qO- '${DATAFLOW_URI:-http://dataflow-server:9393}/apps' --no-check-certificate --post-data='uri=${TASK_APPS_URI:-https://dataflow.spring.io/task-maven-latest&force=true}';
-        echo 'Maven Task apps imported'"
-    platform: linux/amd64
 
