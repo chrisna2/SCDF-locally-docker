@@ -3,7 +3,6 @@ version: '3'
 # 학습 기준 mariaDb 사용
 # Usage: docker-compose -f ./docker-compose.yml -f ./docker-compose-postgres.yml up
 services:
-
   mariadb:
     image: public.ecr.aws/docker/library/mariadb:10-focal
     container_name: dataflow-mariadb
@@ -19,15 +18,6 @@ services:
     platform: linux/amd64
 
   dataflow-server:
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mariadb://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
-      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${DATABASE_DRIVER_CLASS_NAME}
-    depends_on:
-      - mariadb
-
-  skipper-server:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mariadb://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
       - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
