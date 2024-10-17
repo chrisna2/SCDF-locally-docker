@@ -1,5 +1,3 @@
-version: '3'
-
 # 환경변수 설정 :
 # - DATAFLOW_VERSION 및 SKIPPER_VERSION :
 #     > 이 변수들은 DataFlow와 Skipper 이미지의 버전을 지정하는 데 사용됩니다. 예를 들어, 특정 버전의 Spring Cloud Data Flow 및 Skipper를 사용하고자 할 때 이 변수들을 설정합니다.
@@ -27,7 +25,6 @@ version: '3'
 #   > 20000-20105:20000-20105 :
 #     Skipper 컨테이너 내에서 실행되는 스트림 애플리케이션이 사용하는 포트 범위입니다. 이 범위 내의 포트를 통해 애플리케이션의 액추에이터 엔드포인트에 접근할 수 있습니다.
 #     별도의 Docker 컨테이너에서 실행되는 스트림 애플리케이션은 해당 컨테이너에서 노출된 포트를 통해 접근할 수 있습니다.
-
 version: '3'
 
 services:
