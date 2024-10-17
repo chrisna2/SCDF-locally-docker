@@ -4,12 +4,6 @@ cnf ?= config.env
 include $(cnf)
 export $(shell sed 's/=.*//' $(cnf))
 
-dataflow: dataflow-down
-	docker compose -f dataflow-compose.yml \
-	pull
-	docker compose -f dataflow-compose.yml \
-	up -d
-
 dataflow-down:
 	docker compose -f dataflow-compose.yml \
 	down

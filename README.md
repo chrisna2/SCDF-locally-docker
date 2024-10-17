@@ -20,19 +20,27 @@
 git clone https://github.com/chrisna2/SCDF-locally-docker.git
 ```
 
+    2024-10-17 연구 진행 상황 업데이트>
+    1) SCDF 사용의 목적을 Batch 모니터링 및 Task관리를 위해 사용하기 위해 선택과 집중
+        - skipper-compose.yml, local-compose.yml, broker-compose.yml, database-compose.yml 삭제 
+        - dataflow-compose.yml, Makefile 수정 
+        - 배치 job을 구성할 scdf-batch 프로젝트 생성 (해당 소스는 git에 올리지 않음.) 
+
 2. 인텔리J 사용시 Terminal 오픈, PowerShell이 아닌 리눅스 계열 터미널 사용. GIT을 설치한 경우 git Bash 활용 권장
    (이유는 makefile이 리눅스 기반의 명령어로 구성됨) 
 
 
-3. 프로젝트 디렉터리 경로 변경
+3. 프로젝트 디렉터리 경로 확인
 ```bash
 cd SCDF-locally-docker
 ```
 
-4. 데이터 플로우 환경 서비스 시작, 아래 명령어 실행 :
+4. docker-desktop 실행 확인
+
+5. 초기 설치 시 (또는 배치 수정 시) 아래 명령어 실행 :
 
 ```bash
-make dataflow
+make dataflow-build-and-up
 ```
 
 5. 서비스가 시작될 때까지 기다린 후, SCDF 대시보드에 접속 http://localhost:9393/dashboard.
@@ -53,9 +61,13 @@ make dataflow-down
 이 설정에는 다음 서비스들이 포함:
 
 * `dataflow-server`: Spring Cloud Data Flow 서버
-* `skipper-server`: Spring Cloud Skipper 서버
-* `app-import-stream`: Stream 애플리케이션을 가져오기 위한 유틸리티 컨테이너
-* `app-import-task`: Task 애플리케이션을 가져오기 위한 유틸리티 컨테이너
+
+> 2024-10-17 연구 진행 상황 업데이트
+>
+> →  아래 서버는 현재 연구 과제의 목적과 거리가 있어 연구 진행에서 제외
+>* `skipper-server`: Spring Cloud Skipper 서버
+>* `app-import-stream`: Stream 애플리케이션을 가져오기 위한 유틸리티 컨테이너
+>* `app-import-task`: Task 애플리케이션을 가져오기 위한 유틸리티 컨테이너
 
 ## SCDF 서버의 구성
 
@@ -74,17 +86,20 @@ make dataflow-down
   - 데이터 파이프라인 구성 및 관리
   - ##### 배치 서비스에 진행 상황 모니터링 및 작업 제어 (본 연구과제의 목적)
 
-2. Skipper Server (skipper-server) :
-   Skipper Server는 실제 애플리케이션 배포와 관리를 담당. Data Flow Server에서 정의된 파이프라인을 실제 클러스터에 배포하고, 애플리케이션 버전 관리 및 배포 작업을 처리.
-
-   - 배포 관리: Skipper Server는 주로 애플리케이션의 배포를 담당. Data Flow Server에서 정의된 파이프라인을 실제로 실행하기 위해 Skipper Server가 필요.
-   - 버전 관리: Skipper는 애플리케이션 버전 관리를 통해, 다양한 버전의 애플리케이션을 관리하고 배포 가능.
-   - 배포의 세부 관리: 애플리케이션을 클러스터에 배포하고, 배포 상태를 모니터링하며, 롤백과 같은 작업을 처리.
-
-- 주요 기능:
-  - 애플리케이션의 배포와 관리
-  - 애플리케이션 버전 관리
-  - 배포 작업의 세부 관리 및 롤백
+> 2024-10-17 연구 진행 상황 업데이트
+> 
+> →  아래 서버는 현재 연구 과제의 목적과 거리가 있어 연구 진행에서 제외
+> 2. Skipper Server (skipper-server) :
+>  Skipper Server는 실제 애플리케이션 배포와 관리를 담당. Data Flow Server에서 정의된 파이프라인을 실제 클러스터에 배포하고, 애플리케이션 버전 관리 및 배포 작업을 처리.
+>
+>  - 배포 관리: Skipper Server는 주로 애플리케이션의 배포를 담당. Data Flow Server에서 정의된 파이프라인을 실제로 실행하기 위해 Skipper Server가 필요.
+>  - 버전 관리: Skipper는 애플리케이션 버전 관리를 통해, 다양한 버전의 애플리케이션을 관리하고 배포 가능.
+>  - 배포의 세부 관리: 애플리케이션을 클러스터에 배포하고, 배포 상태를 모니터링하며, 롤백과 같은 작업을 처리.
+>
+>- 주요 기능:
+>  - 애플리케이션의 배포와 관리
+>  - 애플리케이션 버전 관리
+>  - 배포 작업의 세부 관리 및 롤백
 
 
 ## SCDF 서버, Spring batch 연동
