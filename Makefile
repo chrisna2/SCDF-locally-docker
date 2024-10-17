@@ -6,18 +6,12 @@ export $(shell sed 's/=.*//' $(cnf))
 
 dataflow: dataflow-down
 	docker compose -f dataflow-compose.yml \
-	-f broker-compose.yml \
-	-f database-compose.yml \
 	pull
 	docker compose -f dataflow-compose.yml \
-	-f broker-compose.yml \
-	-f database-compose.yml \
 	up -d
 
 dataflow-down:
 	docker compose -f dataflow-compose.yml \
-	-f broker-compose.yml \
-	-f database-compose.yml \
 	down
 
 # 새로 추가한 Docker 이미지 빌드 및 서버 업로드
@@ -28,6 +22,4 @@ dataflow-build:
 dataflow-build-and-up: dataflow-build
 	@echo "=== SCDF Docker 이미지를 빌드하고 서비스를 시작합니다 ==="
 	docker compose -f dataflow-compose.yml \
-	-f broker-compose.yml \
-	-f database-compose.yml \
 	up -d --build
