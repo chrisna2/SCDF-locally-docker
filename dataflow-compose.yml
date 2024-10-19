@@ -41,16 +41,4 @@ services:
     restart: always
     volumes:
       - ${DATAFLOW_HOST_MOUNT_PATH:-.}:${DATAFLOW_DOCKER_MOUNT_PATH:-/home/cnb/scdf}
-
-  scdf-batch-app:
-    image: scdf-batch-app:latest
-    container_name: scdf-batch-app
-    build:
-      context: ./scdf-batch
-    depends_on:
-      - dataflow-server
-    environment:
-      - JAVA_OPTS="-Xmx512m -Xms256m"
-    restart: always
-
-
+    platform: linux/amd64
