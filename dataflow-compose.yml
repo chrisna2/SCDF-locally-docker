@@ -36,9 +36,14 @@ services:
     environment:
       - LANG=ko_KR.utf8
       - LC_ALL=ko_KR.utf8
-      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
+      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Dloader.path=/scdf/lib
       - SPRING_CLOUD_DATAFLOW_FEATURES_STREAMS_ENABLED=false  # 스트림 비활성화
+      - SPRING_FLYWAY_ENABLED=false  # 스트림 비활성화
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${DATABASE_DRIVER_CLASS_NAME}
     restart: always
     volumes:
-      - ${DATAFLOW_HOST_MOUNT_PATH:-.}:${DATAFLOW_DOCKER_MOUNT_PATH:-/home/cnb/scdf}
+      - ./jar:/scdf/lib
     platform: linux/amd64

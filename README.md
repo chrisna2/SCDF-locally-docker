@@ -102,6 +102,67 @@ make dataflow-down
 >  - 배포 작업의 세부 관리 및 롤백
 
 
-## SCDF 서버, Spring batch 연동
-
+## 이슈1) SCDF 서버, Spring batch 연동
 - 배치 개발 구조 변경 필요
+- 각각의 Task를 등록 하기 위해서는 현재 배치 Job은 독립된 jar 이거나, image가 되어 컨테이너화 되어야 한다.
+
+## 이슈2) SCDF Dataflow 서버 오라클 연동
+- 2024-10-14 ~ 2024-10-22일 까지 삽질의 기록
+  - springcloud/spring-cloud-dataflow-server:2.11.0-SNAPSHOT 이미지 안됨 (아래는 마지막 시도 흔적)
+    - ```dockerfile
+        version: '3'
+        
+        services:
+        dataflow-server:
+        image: springcloud/spring-cloud-dataflow-server:${DATAFLOW_VERSION:-2.10.2-SNAPSHOT}
+        container_name: dataflow-server
+        ports:
+        - "9393:9393"
+        environment:
+          - LANG=ko_KR.utf8
+          - LC_ALL=ko_KR.utf8
+          - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Dloader.path=/scdf/lib
+          - SPRING_CLOUD_DATAFLOW_FEATURES_STREAMS_ENABLED=false  # 스트림 비활성화
+          - SPRING_FLYWAY_ENABLED=false  # 스트림 비활성화
+          - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@//${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}
+          - SPRING_DATASOURCE_USERNAME=${DATABASE_USERNAME}
+          - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
+          - SPRING_DATASOURCE_DRIVER_CLASS_NAME=${DATABASE_DRIVER_CLASS_NAME}
+          restart: always
+          volumes:
+          - ./jar:/scdf/lib
+          platform: linux/amd64
+        ```
+    - spring-cloud-dataflow-server-2.11.5.jar 형태로 실행 해보려 했으나 안됨 (아래는 마지막 시도 흔적)
+    - ```shell
+        # JDBC 드라이버 포함하여 SCDF 실행
+        java -cp "spring-cloud-dataflow-server-2.11.5.jar:ojdbc8.jar" \
+        org.springframework.boot.loader.PropertiesLauncher \
+        --spring.datasource.url=jdbc:oracle:thin:@//$DATABASE_HOST:$DATABASE_PORT/$DATABASE_NAME \
+        --spring.datasource.username=$DATABASE_USERNAME \
+        --spring.datasource.password=$DATABASE_PASSWORD \
+        --spring.datasource.driver-class-name=$DATABASE_DRIVER_CLASS_NAME \
+        --spring.cloud.dataflow.features.streams-enabled=false \
+        --spring.flyway.enabled=false
+        
+        exit 0
+      ```
+    - 둘다 공통적으로 spring-cloud-dataflow-server-2.11.5.jar 빌드시 oracle jdbc 에 대한 dependency를 걸어 주지 않으면 
+      서버 실행시 드라이버가 연결이 안됨 
+    - planb 1. 오라클을 버리고 postgres로 갈아탄다.
+    - planb 2. 내가 직겁 spring-cloud-dataflow-server-2.11.5.jar를 빌드한다.
+    - planb 2 선택함, 이미 구성된 DB가 오라클로 있는 상황에서 결국 직접 빌드하는 수 밖에 없음.
+
+### planb 2 내가 직겁 spring-cloud-dataflow-server-2.11.5.jar를 빌드.
+
+1. git clone 
+```shell
+  git clone -b v2.11.0 https://github.com/spring-cloud/spring-cloud-dataflow.git
+  git clone https://github.com/spring-cloud/spring-cloud-dataflow-ui.git
+```
+1개는 dataflow 서버이고, 다른 한개는 SCDF 대시보드 UI 임
+
+2. spring-cloud-dataflow 프로젝트를 열고 터미널에 아래 명령어 실행 
+```shell
+./mvnw -s .settings.xml clean package -Plocal-dev-oracle
+```

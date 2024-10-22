@@ -12,7 +12,6 @@ TASKS = hpf-download-job hpf-upld-mng-job     # batch jobs 목록, 계속 추가
 dataflow-down:
 	@echo "=== SCDF 관련 Docker 이미지를 내립니다. ==="
 	docker compose -f dataflow-compose.yml \
-		           -f database-compose.yml \
 	down
 
 # dataflow 이미지 빌드 및 배치 job 이미지 빌드후 SCDF task 등록
@@ -21,13 +20,12 @@ dataflow-build-and-up:
 	@echo "=== Building Docker images for SCDF server and batch jobs, and starting the server ==="
 	# Build and run the SCDF server Docker image
 	docker compose -f dataflow-compose.yml \
-                   -f database-compose.yml \
            down && \
 	docker compose -f dataflow-compose.yml \
-				   -f database-compose.yml \
 	       up -d --build && \
-	MAKE build-all && \
-	MAKE register-all
+	MAKE build-all
+	#&& \
+	#MAKE register-all
 
 # 모든 배치 job 이미지 빌드
 .PHONY: build-all
@@ -38,6 +36,13 @@ $(addprefix build-, $(TASKS)):
 	path=./scdf-batch/$$task && \
 	echo "=== Building Docker image locally for: $$task ===" && \
 	docker build -t $$task:latest $$path
+
+# 빌드됨 배치 job 이미지 를 SCDF에 Task로 등록 하기 위해 SCDF cli 기동
+#.PHONY: run-scdf-shell
+#run-scdf-shell:
+#	@echo "=== run SCDF shell start ==="
+#	java -jar ./standalone/spring-cloud-dataflow-shell-2.11.5.jar
+#	@echo "=== run SCDF shell end ==="
 
 # 빌드됨 배치 job 이미지 를 SCDF에 Task로 등록
 .PHONY: register-all
