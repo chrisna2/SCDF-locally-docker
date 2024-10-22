@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# source
+# 환경 변수 입력
 source ../config.env
 
 # JDBC 드라이버 포함하여 SCDF 실행
