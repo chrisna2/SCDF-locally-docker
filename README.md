@@ -105,9 +105,10 @@ make dataflow-down
 ## 이슈1) SCDF 서버, Spring batch 연동
 - 배치 개발 구조 변경 필요
 - 각각의 Task를 등록 하기 위해서는 현재 배치 Job은 독립된 jar 이거나, image가 되어 컨테이너화 되어야 한다.
+- scdf-batch 별도의 디렉터리를 구성하여 해당 디렉터리에 배치 jab을 구현
 
 ## 이슈2) SCDF Dataflow 서버 오라클 연동
-- 2024-10-14 ~ 2024-10-22일 까지 삽질의 기록
+- 2024-10-14 ~ 2024-10-22일 까지 수행 삽질의 기록
   - springcloud/spring-cloud-dataflow-server:2.11.0-SNAPSHOT 이미지 안됨 (아래는 마지막 시도 흔적)
     - ```dockerfile
         version: '3'
@@ -150,19 +151,88 @@ make dataflow-down
     - 둘다 공통적으로 spring-cloud-dataflow-server-2.11.5.jar 빌드시 oracle jdbc 에 대한 dependency를 걸어 주지 않으면 
       서버 실행시 드라이버가 연결이 안됨 
     - planb 1. 오라클을 버리고 postgres로 갈아탄다.
-    - planb 2. 내가 직겁 spring-cloud-dataflow-server-2.11.5.jar를 빌드한다.
-    - planb 2 선택함, 이미 구성된 DB가 오라클로 있는 상황에서 결국 직접 빌드하는 수 밖에 없음.
+    - planb 2. 내가 직겁 spring-cloud-dataflow-server-2.11.0.jar를 빌드한다.  
+      (planb 2 선택함, 이미 구성된 DB가 오라클로 있는 상황에서 결국 직접 빌드하는 수 밖에 없음.)
 
-### planb 2 내가 직겁 spring-cloud-dataflow-server-2.11.5.jar를 빌드.
+### planb 2 내가 직겁 spring-cloud-dataflow-server-2.11.0.jar를 빌드.
+(2024-10-23 ~ 2024-10-26 일간 수행 기록 업데이트)
 
-1. git clone 
+1. git clone (SCDF 2.11 버전 선택 (JDK 1.8))
 ```shell
   git clone -b v2.11.0 https://github.com/spring-cloud/spring-cloud-dataflow.git
-  git clone https://github.com/spring-cloud/spring-cloud-dataflow-ui.git
+#  git clone https://github.com/spring-cloud/spring-cloud-dataflow-ui.git
 ```
-1개는 dataflow 서버이고, 다른 한개는 SCDF 대시보드 UI 임
-
-2. spring-cloud-dataflow 프로젝트를 열고 터미널에 아래 명령어 실행 
+- 위에는 dataflow 서버이고, 다른 한개는 SCDF 대시보드 UI 임 (사실 ui는 필요 없음)
+2. clone한 spring-cloud-dataflow 프로젝트를 OPEN
+3. 메이븐 settings.xml 기본 설정 사용 (~/.m2/~)
+4. spring-cloud-dataflow/pom.xml 에 아래 플러그인 추가
+```xml
+<!-- 중략 -->
+<properties>
+    <spring.cloud.dataflow.server.path>./spring-cloud-dataflow-server/target</spring.cloud.dataflow.server.path>
+    <spring.cloud.dataflow.shell.path>./spring-cloud-dataflow-shell/target</spring.cloud.dataflow.shell.path>
+    <workspace.path>현재 SCDF-locally-docker 프로젝트 OPEN 경로</workspace.path>
+</properties>
+<!-- 중략 -->
+<build>
+<!-- 중략 -->
+    <plugins>
+        <!-- 중략 -->
+        <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+            <execution>
+                <id>copy-selected-jars-on-install</id>
+                <phase>install</phase>
+                <configuration>
+                    <tasks>
+                        <copy file="${spring.cloud.dataflow.server.path}/spring-cloud-dataflow-server-${project.version}.jar"
+                              todir="${workspace.path}/SCDF-locally-docker/jar" />
+                        <copy file="${spring.cloud.dataflow.shell.path}/spring-cloud-dataflow-shell-${project.version}.jar"
+                              todir="${workspace.path}/SCDF-locally-docker/jar" />
+                    </tasks>
+                </configuration>
+                <goals>
+                    <goal>run</goal>
+                </goals>
+            </execution>
+        </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+5. spring-cloud-dataflow/spring-cloud-dataflow/pom.xml 에 다음 의존성 수정 
+```xml
+<!--
+<dependency>
+    <groupId>com.oracle.database.jdbc</groupId>
+    <artifactId>ojdbc8</artifactId>
+    <version>21.9.0.0</version>
+    <scope>test</scope>
+</dependency>
+-->
+<dependency>
+    <groupId>com.oracle.ojdbc</groupId>
+    <artifactId>ojdbc8</artifactId>
+    <version>19.3.0.0</version>
+</dependency>
+```
+5. 메이븐 clean install 실행
 ```shell
-./mvnw -s .settings.xml clean package -Plocal-dev-oracle
+mvn clean install
+```
+6. spring-cloud-dataflow/spring-cloud-dataflow/target/spring-cloud-dataflow-server-2.11.0.jar 빌드 및 이동 확인
+7. spring-cloud-dataflow/spring-cloud-dataflow-shell/target/spring-cloud-dataflow-shell-2.11.0.jar 빌드 및 이동 확인
+8. SCDF-locally-docker 프로젝트 OPEN
+9. docker-compose.yml 확인
+```yaml
+  - SPRING_FLYWAY_ENABLED=false  # DB 동기화 처리 (만약 이전에 HBT 구성되지 않은 경우 true 처리)
+  - SPRING_LIQUIBASE_ENABLED=false  # Liquibase 마이그레이션 활성화 (만약 이전에 HBT 구성되지 않은 경우 true 처리)
+```
+(※ 만약 HBT가 일부가 구성된 경우, 위에 조건 false 처리 후 ./oracle-sql-init 폳더의 SQL을 활용하여 DDL 보충)
+10. docker-desktop 실행 후아래 명령어 실행
+```shell
+make dataflow-build-and-up
 ```
