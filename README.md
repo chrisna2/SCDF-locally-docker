@@ -105,7 +105,7 @@ make dataflow-down
 ## 이슈1) SCDF 서버, Spring batch 연동
 - 배치 개발 구조 변경 필요
 - 각각의 Task를 등록 하기 위해서는 현재 배치 Job은 독립된 jar 이거나, image가 되어 컨테이너화 되어야 한다.
-- scdf-batch 별도의 디렉터리를 구성하여 해당 디렉터리에 배치 jab을 구현
+- scdf-batch 별도의 디렉터리를 구성하여 해당 디렉터리에 배치 job을 구현
 
 ## 이슈2) SCDF Dataflow 서버 오라클 연동
 - 2024-10-14 ~ 2024-10-22일 까지 수행 삽질의 기록
@@ -231,7 +231,7 @@ mvn clean install
   - SPRING_FLYWAY_ENABLED=false  # DB 동기화 처리 (만약 이전에 HBT 구성되지 않은 경우 true 처리)
   - SPRING_LIQUIBASE_ENABLED=false  # Liquibase 마이그레이션 활성화 (만약 이전에 HBT 구성되지 않은 경우 true 처리)
 ```
-(※ 만약 HBT가 일부가 구성된 경우, 위에 조건 false 처리 후 ./oracle-sql-init 폳더의 SQL을 활용하여 DDL 보충)
+(※ 만약 HBT가 일부가 구성된 경우, 위에 조건 false 처리 후 ./oracle-sql-init 폳더의 SQL을 활용하여 DDL 보충, 주의) 내용의 전부를 구성해야됨)
 10. docker-desktop 실행 후아래 명령어 실행
 ```shell
 make dataflow-build-and-up
