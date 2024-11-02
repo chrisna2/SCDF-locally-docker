@@ -5,7 +5,7 @@ FROM openjdk:8-jdk-alpine
 WORKDIR /app
 
 # 사용자가 만든 JAR 파일을 컨테이너에 복사
-COPY ./jar/spring-cloud-dataflow-server-2.11.0.jar /app/spring-cloud-dataflow-server.jar
+COPY ./jar/spring-cloud-dataflow-server-2.11.0.jar /scdf/spring-cloud-dataflow-server.jar
 
 # 애플리케이션 실행
-ENTRYPOINT ["java", "-jar", "/app/spring-cloud-dataflow-server.jar"]
+ENTRYPOINT ["java", "-jar", "/scdf/spring-cloud-dataflow-server.jar"]

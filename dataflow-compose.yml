@@ -37,7 +37,8 @@ services:
     environment:
       - LANG=ko_KR.utf8
       - LC_ALL=ko_KR.utf8
-      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -Dloader.path=/scdf/lib
+      - JDK_JAVA_OPTIONS=-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8
+      - JAVA_OPTS=-cp "/scdf/lib/*" #메이븐 의존성 주입
       - SPRING_CLOUD_DATAFLOW_FEATURES_STREAMS_ENABLED=false  # 스트림 비활성화
       - SPRING_FLYWAY_ENABLED=false  # DB 동기화 처리 (만약 이전에 HBT 구성되지 않은 경우 true 처리)
       - SPRING_LIQUIBASE_ENABLED=false  # Liquibase 마이그레이션 활성화 (만약 이전에 HBT 구성되지 않은 경우 true 처리)
@@ -48,5 +49,5 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
     restart: always
     volumes:
-      - ./jar:/scdf/lib
+      - ${MAVEN_LOCAL_REPOSITORY}:/scdf/lib
     platform: linux/amd64
