@@ -18,7 +18,7 @@ java -jar "spring-cloud-dataflow-server-2.11.0.jar" \
 --spring.datasource.password=$DATABASE_PASSWORD \
 --spring.datasource.driver-class-name=$DATABASE_DRIVER_CLASS_NAME \
 --spring.cloud.dataflow.features.streams-enabled=false \
---spring.flyway.enabled=false # HBT가 구성되지 않은 경우 해당 인수의 값은 true 처리
+--spring.flyway.enabled=false
 
 exit 0
 

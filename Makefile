@@ -1,11 +1,10 @@
-# import config.
-# You can change the default config with `make cnf="config_special.env" build`
+# config.env 임포팅
 cnf ?= config.env
 include $(cnf)
 export $(shell sed 's/=.*//' $(cnf))
 
-# 현재 날짜와 시간을 포맷하여 변수에 저장
-LOG_FILE="./log/register_task_log_$(shell date +%Y-%m-%d_%H-%M).log"
+# 현재 날짜와 시간을 포맷하여 변수에 로그파일로 저장
+LOG_FILE="./log/register_task_log_$(shell date +%Y-%m-%d_%H).log"
 
 # 새로 추가한 Docker 이미지 및 컨테이너 다운
 dataflow-down:
@@ -26,7 +25,7 @@ dataflow-build-and-up:
 	MAKE register-all
 
 
-# 모든 배치 job 이미지 빌드
+# 모든 배치 job application 빌드.
 .PHONY: build-all
 build-all:
 	@echo "=== Building SCDF batch app start  ==="
@@ -43,7 +42,7 @@ wait-for-server:
 	done
 	@echo "=== SCDF server is now ready, check register Task ==="
 
-# 빌드됨 배치 job 이미지 를 SCDF에 Task로 등록
+# 빌드됨 배치 job 이미지를 SCDF에 Task로 등록
 .PHONY: register-all
 register-all: $(addprefix register-, $(TASKS))
 	@rm -f check-task-output.txt check-task.script || true; \
